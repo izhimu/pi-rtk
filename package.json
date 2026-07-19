@@ -1,0 +1,22 @@
+{
+  "name": "pi-rtk",
+  "version": "0.1.0",
+  "description": "RTK integration for pi — transparent command rewriting for 60-90% token savings",
+  "type": "module",
+  "keywords": ["pi-package", "rtk", "token-savings", "command-rewriting"],
+  "author": "",
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills"]
+  },
+  "files": [
+    "extensions/",
+    "skills/",
+    "README.md",
+    "LICENSE"
+  ]
+}
