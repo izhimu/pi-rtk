@@ -4,7 +4,6 @@ description: >
   RTK (Rust Token Killer) integration. Transparent command rewriting that reduces
   LLM token consumption by 60-90%. Commands are automatically rewritten to use rtk
   equivalents. Use /rtk to toggle, /rtk-status for savings stats.
----
 
 # RTK — Token Savings
 

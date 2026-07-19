@@ -12,7 +12,6 @@ Upstream: [rtk-ai/rtk](https://github.com/rtk-ai/rtk)
 - **Transparent rewriting** — shell commands automatically use `rtk` equivalents, no workflow changes
 - **60-90% token savings** — tested across 100+ command categories
 - **Zero overhead** — single Rust binary, <10ms rewrite latency
-- **Status bar integration** — live savings indicator with color-coded display
 - **Toggle on/off** — `/rtk on` / `/rtk off` without restarting
 - **Session stats** — track rewrites, passthroughs, and errors per session
 - **Safe by default** — all error paths pass through, RTK never blocks execution

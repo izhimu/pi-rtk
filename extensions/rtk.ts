@@ -1,7 +1,6 @@
 // pi-rtk — pi extension
 //
-// RTK integration for pi: transparent command rewriting, token savings tracking,
-// status bar integration.
+// RTK integration for pi: transparent command rewriting, token savings tracking.
 //
 // Requires: rtk >= 0.23.0 in PATH.
 // Upstream: https://github.com/rtk-ai/rtk
@@ -23,8 +22,6 @@ const BOLD = `${ESC}1m`;
 const GREEN = `${ESC}32m`;
 const YELLOW = `${ESC}33m`;
 const RED = `${ESC}31m`;
-const CYAN = `${ESC}36m`;
-const GRAY = `${ESC}90m`;
 
 function bar(pct: number, width = 20): string {
   const filled = Math.round((pct / 100) * width);
@@ -39,6 +36,14 @@ interface SessionStats {
   errors: number;
 }
 
+interface RtkGainSummary {
+  total_commands: number;
+  total_input: number;
+  total_output: number;
+  total_saved: number;
+  avg_savings_pct: number;
+}
+
 let sessionStats: SessionStats = { rewrites: 0, passthrough: 0, errors: 0 };
 let rtkEnabled = true;
 let rtkVersion: string | null = null;
@@ -49,6 +54,20 @@ function parseSemver(raw: string): [number, number, number] | null {
   const m = raw.trim().match(/(\d+)\.(\d+)\.(\d+)/);
   if (!m) return null;
   return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
+}
+
+// ── RTK gain query ─────────────────────────────────────────────────────────
+
+async function fetchRtkGain(pi: ExtensionAPI, project = true): Promise<RtkGainSummary | null> {
+  try {
+    const args = ["gain", "--format", "json"];
+    if (project) args.push("-p");
+    const result = await pi.exec("rtk", args, { timeout: 3_000 });
+    if (result.code !== 0) return null;
+    return JSON.parse(result.stdout.trim()).summary;
+  } catch {
+    return null;
+  }
 }
 
 // ── RTK rewrite ─────────────────────────────────────────────────────────────
@@ -66,8 +85,6 @@ async function rewriteCommand(
   if (result.code !== 0 && result.code !== 3) return null;
   return result.stdout.trim() || null;
 }
-
-// ── Extension factory ───────────────────────────────────────────────────────
 
 export default async function rtkExtension(pi: ExtensionAPI) {
   // ── Version probe ──────────────────────────────────────────────────────
@@ -91,13 +108,12 @@ export default async function rtkExtension(pi: ExtensionAPI) {
     }
   }
 
-  // ── Session reset ──────────────────────────────────────────────────────
-  pi.on("session_start", () => {
+  // ── Session reset ─────────────────────────────────────────────────────
+  pi.on("session_start", async () => {
     sessionStats = { rewrites: 0, passthrough: 0, errors: 0 };
     rtkEnabled = true;
   });
 
-  // ── Command interception ───────────────────────────────────────────────
   pi.on("tool_call", async (event, ctx) => {
     try {
       if (!rtkEnabled) return;
@@ -117,12 +133,9 @@ export default async function rtkExtension(pi: ExtensionAPI) {
       }
     } catch (err) {
       sessionStats.errors++;
-      // Fail open: never block execution.
       console.warn("[rtk] unexpected error in tool_call handler; passing through", err);
-      return;
     }
   });
-
   // ── Argument completions ─────────────────────────────────────────────
   const RTK_CHOICES = [
     { value: "on",     label: "on",     description: "enable command rewriting" },
@@ -183,22 +196,6 @@ export default async function rtkExtension(pi: ExtensionAPI) {
   }
 
   // ── /rtk-status command — show savings ───────────────────────────────────
-  async function getRtkSavings(project: boolean): Promise<{
-    total_commands: number;
-    total_saved: number;
-    avg_savings_pct: number;
-  } | null> {
-    try {
-      const args = ["gain", "--format", "json"];
-      if (project) args.push("-p");
-      const result = await pi.exec("rtk", args, { timeout: 5_000 });
-      if (result.code !== 0) return null;
-      return JSON.parse(result.stdout.trim()).summary;
-    } catch {
-      return null;
-    }
-  }
-
   pi.registerCommand("rtk-status", {
     description: "Show RTK token savings (project-scoped, or 'global' for all)",
     getArgumentCompletions: (prefix) => getStatusCompletions(prefix),
@@ -220,8 +217,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
           ` ${YELLOW}${sessionStats.errors}${RST} errors`,
         );
       }
-
-      const savings = await getRtkSavings(arg !== "global");
+      const savings = await fetchRtkGain(pi, arg !== "global");
       if (savings && savings.total_saved > 0) {
         const pct = Math.round(savings.avg_savings_pct);
         lines.push(
@@ -249,8 +245,4 @@ export default async function rtkExtension(pi: ExtensionAPI) {
     },
   });
 
-  // ── Status bar ─────────────────────────────────────────────────────────
-  // Note: status bar integration depends on Pi's UI API supporting it.
-  // If ctx.ui.setStatus is available, update on each rewrite.
-  // For now, the /rtk and /rtk-status commands serve as the primary status view.
 }
