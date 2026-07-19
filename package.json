@@ -1,6 +1,6 @@
 {
-  "name": "pi-rtk",
-  "version": "0.1.5",
+  "name": "@izhimu/pi-rtk",
+  "version": "0.1.0",
   "description": "RTK integration for pi — transparent command rewriting for 60-90% token savings",
   "type": "module",
   "keywords": [
