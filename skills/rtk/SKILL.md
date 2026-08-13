@@ -4,6 +4,7 @@ description: >
   RTK (Rust Token Killer) integration. Transparent command rewriting that reduces
   LLM token consumption by 60-90%. Commands are automatically rewritten to use rtk
   equivalents. Use /rtk to toggle, /rtk-status for savings stats.
+---
 
 # RTK — Token Savings
 
@@ -27,14 +28,17 @@ matters — saving 60-90% tokens.
 
 | Category | Examples | Savings |
 |----------|----------|---------|
-| Test runners | vitest, pytest, cargo test, go test, playwright | 90-99% |
-| Build tools | cargo build, npm, pnpm, dotnet, make | 70-90% |
-| VCS | git status/log/diff/show | 70-80% |
-| Language servers | tsc, mypy | 80-83% |
-| Linters | eslint, ruff, golangci-lint, biome | 80-85% |
-| Package managers | pip, cargo install, pnpm list | 75-80% |
-| File operations | ls, find, grep, cat, head, tail | 60-75% |
-| Infrastructure | docker, kubectl, aws, terraform | 75-85% |
+| Files | ls, read, find, grep, diff | 60-75% |
+| Git | git status/log/diff/add/commit/push/pull | 70-80% |
+| GitHub CLI | gh pr/issue list, gh pr view, gh run list | 70-80% |
+| Test runners | jest, vitest, playwright, pytest, cargo test, go test, rspec | 90-99% |
+| Build & Lint | eslint, biome, tsc, cargo build/clippy, ruff, golangci-lint, rubocop | 70-90% |
+| Package managers | pnpm list, pip list, bundle install, prisma generate | 75-80% |
+| AWS | sts, ec2, lambda, logs, cloudformation, dynamodb, iam, s3 | 75-85% |
+| Containers | docker ps/images/logs, kubectl pods/logs/services, OpenShift | 75-85% |
+| Infrastructure as Code | pulumi preview/up/destroy/refresh/stack | 70-80% |
+| Data & Analytics | json, deps, env, log, curl, wget, summary | 60-75% |
+| Token analytics | rtk gain, rtk discover, rtk session | — |
 
 ## Commands
 
