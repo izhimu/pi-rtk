@@ -5,7 +5,7 @@
 // Requires: rtk >= 0.23.0 in PATH.
 // Upstream: https://github.com/rtk-ai/rtk
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { isToolCallEventType } from "@earendil-works/pi-coding-agent";
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -28,6 +28,11 @@ function bar(pct: number, width = 20): string {
   return "█".repeat(filled) + "░".repeat(width - filled);
 }
 
+function formatTokens(tokens: number): string {
+  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+  return `${(tokens / 1_000).toFixed(1)}k`;
+}
+
 // ── Session stats ───────────────────────────────────────────────────────────
 
 interface SessionStats {
@@ -47,6 +52,8 @@ interface RtkGainSummary {
 let sessionStats: SessionStats = { rewrites: 0, passthrough: 0, errors: 0 };
 let rtkEnabled = true;
 let rtkVersion: string | null = null;
+let lastGain: RtkGainSummary | null = null;
+let baselineSaved = 0;
 
 // ── Semver helpers ──────────────────────────────────────────────────────────
 
@@ -54,6 +61,29 @@ function parseSemver(raw: string): [number, number, number] | null {
   const m = raw.trim().match(/(\d+)\.(\d+)\.(\d+)/);
   if (!m) return null;
   return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
+}
+
+// ── Status Bar Update ───────────────────────────────────────────────────────
+
+function updateStatus(ctx: ExtensionContext | ExtensionCommandContext) {
+  if (!ctx.hasUI) return;
+
+  if (!rtkEnabled) {
+    ctx.ui.setStatus("rtk", undefined);
+    return;
+  }
+
+  const sessionSaved = (lastGain?.total_saved ?? 0) - baselineSaved;
+
+  if (sessionSaved > 0) {
+    const savedStr = `-${formatTokens(sessionSaved)}`;
+    const text = ctx.ui.theme?.fg
+      ? `${ctx.ui.theme.fg("accent", "rtk:")} ${ctx.ui.theme.fg("success", savedStr)}`
+      : `rtk: ${savedStr}`;
+    ctx.ui.setStatus("rtk", text);
+  } else {
+    ctx.ui.setStatus("rtk", undefined);
+  }
 }
 
 // ── RTK gain query ─────────────────────────────────────────────────────────
@@ -64,7 +94,9 @@ async function fetchRtkGain(pi: ExtensionAPI, project = true): Promise<RtkGainSu
     if (project) args.push("-p");
     const result = await pi.exec("rtk", args, { timeout: 3_000 });
     if (result.code !== 0) return null;
-    return JSON.parse(result.stdout.trim()).summary;
+    const summary = JSON.parse(result.stdout.trim()).summary;
+    if (project) lastGain = summary;
+    return summary;
   } catch {
     return null;
   }
@@ -108,10 +140,20 @@ export default async function rtkExtension(pi: ExtensionAPI) {
     }
   }
 
-  // ── Session reset ─────────────────────────────────────────────────────
-  pi.on("session_start", async () => {
+  // ── Session reset & Status ────────────────────────────────────────────
+  pi.on("session_start", async (_event, ctx) => {
     sessionStats = { rewrites: 0, passthrough: 0, errors: 0 };
     rtkEnabled = true;
+    const savings = await fetchRtkGain(pi, true);
+    baselineSaved = savings?.total_saved ?? 0;
+    updateStatus(ctx);
+  });
+
+  pi.on("turn_end", async (_event, ctx) => {
+    if (sessionStats.rewrites > 0) {
+      await fetchRtkGain(pi, true);
+      updateStatus(ctx);
+    }
   });
 
   pi.on("tool_call", async (event, ctx) => {
@@ -136,6 +178,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
       console.warn("[rtk] unexpected error in tool_call handler; passing through", err);
     }
   });
+
   // ── Argument completions ─────────────────────────────────────────────
   const RTK_CHOICES = [
     { value: "on",     label: "on",     description: "enable command rewriting" },
@@ -165,18 +208,21 @@ export default async function rtkExtension(pi: ExtensionAPI) {
           ` ${sessionStats.rewrites} rewritten ${DIM}│${RST} ${sessionStats.passthrough} passed ${DIM}│${RST} ${total} total`,
         ].join("\n");
         if (ctx.hasUI) ctx.ui.notify(msg, "info");
+        updateStatus(ctx);
         return;
       }
 
       if (arg === "on" || arg === "enable") {
         rtkEnabled = true;
         if (ctx.hasUI) ctx.ui.notify("RTK enabled", "info");
+        updateStatus(ctx);
         return;
       }
 
       if (arg === "off" || arg === "disable") {
         rtkEnabled = false;
         if (ctx.hasUI) ctx.ui.notify("RTK disabled", "info");
+        updateStatus(ctx);
         return;
       }
 
@@ -185,6 +231,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
       }
     },
   });
+
   // ── /rtk-status completions ──────────────────────────────────────────
   const STATUS_CHOICES = [
     { value: "global", label: "global", description: "show global savings (all projects)" },
@@ -235,6 +282,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
 
       const msg = lines.join("\n");
       if (ctx.hasUI) ctx.ui.notify(msg, "info");
+      updateStatus(ctx);
       pi.sendMessage(
         {
           content: msg,
