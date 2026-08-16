@@ -78,8 +78,8 @@ function updateStatus(ctx: ExtensionContext | ExtensionCommandContext) {
   if (sessionSaved > 0) {
     const savedStr = `-${formatTokens(sessionSaved)}`;
     const text = ctx.ui.theme?.fg
-      ? `⚡ ${ctx.ui.theme.fg("success", savedStr)}`
-      : `⚡ ${savedStr}`;
+      ? `${ctx.ui.theme.fg("accent", "⋈")} ${ctx.ui.theme.fg("success", savedStr)}`
+      : `⋈ ${savedStr}`;
     ctx.ui.setStatus("rtk", text);
   } else {
     ctx.ui.setStatus("rtk", undefined);
