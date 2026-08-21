@@ -2,8 +2,9 @@
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![pi extension](https://img.shields.io/badge/pi-extension-green.svg)](https://github.com/earendil-works/pi)
+[![npm version](https://img.shields.io/npm/v/@izhimu/pi-rtk.svg)](https://www.npmjs.com/package/@izhimu/pi-rtk)
 
-RTK (Rust Token Killer) integration for [pi](https://github.com/earendil-works/pi) — transparent command rewriting that reduces LLM token consumption by **60-90%**.
+RTK (Rust Token Killer) integration for [pi](https://github.com/earendil-works/pi) and [oh-my-pi](https://github.com/can1357/oh-my-pi) — transparent command rewriting that reduces LLM token consumption by **60-90%**.
 
 Upstream: [rtk-ai/rtk](https://github.com/rtk-ai/rtk)
 
@@ -110,14 +111,16 @@ rtk cargo test
 pi-rtk/
 ├── extensions/
 │   └── rtk.ts            # pi ExtensionAPI integration
-├── skills/
-│   └── rtk/
-│       └── SKILL.md      # RTK behavior rules
+├── CHANGELOG.md
 ├── package.json          # pi package manifest
 ├── tsconfig.json
 ├── LICENSE
 └── README.md
 ```
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 ## Contributing
 

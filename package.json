@@ -1,8 +1,11 @@
 {
   "name": "@izhimu/pi-rtk",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "RTK integration for pi — transparent command rewriting for 60-90% token savings",
   "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "keywords": [
     "pi-package",
     "rtk",
@@ -14,17 +17,18 @@
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
   },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3"
+  },
   "pi": {
     "extensions": [
       "./extensions"
-    ],
-    "skills": [
-      "./skills"
     ]
   },
   "files": [
     "extensions/",
-    "skills/",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ]
