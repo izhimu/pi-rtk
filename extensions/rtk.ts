@@ -5,8 +5,17 @@
 // Requires: rtk >= 0.23.0 in PATH.
 // Upstream: https://github.com/rtk-ai/rtk
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { isToolCallEventType } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ToolCallEvent } from "@earendil-works/pi-coding-agent";
+
+// Local type-guard avoiding package barrel import at load (~250ms -> ~10ms, upstream #2753).
+// Covers both "bash" and "powershell" tool calls (supported since Pi #8512 on Windows).
+function isCommandToolCallEvent(
+  event: ToolCallEvent,
+): event is ToolCallEvent & { input: { command: string } } {
+  if (event.toolName !== "bash" && event.toolName !== "powershell") return false;
+  const input = event.input;
+  return Boolean(input && typeof input === "object" && "command" in input && typeof input.command === "string");
+}
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -85,10 +94,47 @@ async function rewriteCommand(
   return result.stdout.trim() || null;
 }
 
+type StatusContext = {
+  ui?: {
+    setStatus?: (key: string, text: string) => void;
+  };
+};
+
+function registerRtkUnavailableNotice(pi: ExtensionAPI) {
+  let reason: string | undefined;
+  let sessionContext: StatusContext | undefined;
+
+  const applyStatus = () => {
+    if (!reason || !sessionContext) return;
+    try {
+      sessionContext.ui?.setStatus?.("rtk", `RTK disabled: ${reason}`);
+    } catch {
+      // Fail open: status reporting must never throw.
+    }
+  };
+
+  try {
+    pi.on("session_start", (_event: unknown, ctx: unknown) => {
+      sessionContext = ctx as StatusContext;
+      applyStatus();
+    });
+  } catch {
+    return (_reason: string) => {};
+  }
+
+  return (nextReason: string) => {
+    reason = nextReason;
+    applyStatus();
+  };
+}
+
 export default async function rtkExtension(pi: ExtensionAPI) {
+  const reportRtkUnavailable = registerRtkUnavailableNotice(pi);
+
   // ── Version probe ──────────────────────────────────────────────────────
   const ver = await pi.exec("rtk", ["--version"], { timeout: REWRITE_TIMEOUT_MS });
   if (ver.code !== 0) {
+    reportRtkUnavailable("rtk binary not found in PATH");
     console.warn("[rtk] rtk binary not found in PATH — extension disabled");
     return;
   }
@@ -100,6 +146,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
   if (parsed) {
     const [major, minor] = parsed;
     if (major === 0 && minor < MIN_SUPPORTED_RTK_MINOR) {
+      reportRtkUnavailable(`rtk ${parsed.join(".")} is too old (need >= 0.23.0)`);
       console.warn(
         `[rtk] rtk ${ver.stdout.trim()} is too old (need >= 0.23.0) — extension disabled`,
       );
@@ -115,11 +162,10 @@ export default async function rtkExtension(pi: ExtensionAPI) {
 
   pi.on("tool_call", async (event, ctx) => {
     try {
-      if (!rtkEnabled) return;
-      if (!isToolCallEventType("bash", event)) return;
+      if (!isCommandToolCallEvent(event)) return;
 
       const cmd = event.input.command;
-      if (typeof cmd !== "string" || cmd.trim() === "") return;
+      if (cmd.trim() === "") return;
       if (cmd.startsWith("rtk ")) return;
       if (process.env.RTK_DISABLED === "1") return;
 

@@ -62,8 +62,8 @@ pi -e ./extensions/rtk.ts
 
 | Category | Examples | Savings |
 |----------|----------|---------|
-| Test runners | vitest, pytest, cargo test, go test, playwright | 90-99% |
-| Build tools | cargo build, npm, pnpm, dotnet, make | 70-90% |
+| Test runners | vitest, pytest, cargo test, go test, playwright, bun, deno | 90-99% |
+| Build tools | cargo build, npm, pnpm, bun, deno, dotnet, make, mvn | 70-90% |
 | VCS | git status/log/diff/show | 70-80% |
 | Language servers | tsc, mypy | 80-83% |
 | Linters | eslint, ruff, golangci-lint, biome | 80-85% |
@@ -95,7 +95,7 @@ rtk cargo test
 ## How It Works
 
 1. Extension loads, probes `rtk --version` (disables if missing or too old)
-2. Subscribes to `tool_call` events, narrows to `bash` tool
+2. Subscribes to `tool_call` events, narrows to `bash` and `powershell` tools
 3. Calls `rtk rewrite <command>` for each shell command
 4. If rewrite differs, mutates command in-place
 5. All error paths pass through — RTK never blocks execution

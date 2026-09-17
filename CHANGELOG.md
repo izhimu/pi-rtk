@@ -2,6 +2,13 @@
 
 All notable changes to `@izhimu/pi-rtk` will be documented in this file.
 
+## [0.1.6] - 2026-09-17
+
+### Performance & Host Adaptations
+- **Eliminated Barrel Import Overhead**: Replaced `@earendil-works/pi-coding-agent` value export `isToolCallEventType` with local type guard `isCommandToolCallEvent`, dropping extension load time from ~250ms to ~10ms (aligned with upstream rtk #2753).
+- **PowerShell Tool Support (Pi)**: Extended tool call interception to include Pi's newly introduced `powershell` tool (PR #8512), enabling transparent command rewriting on Windows.
+- **Session Status Reporting (Pi & OMP)**: Added persistent `RTK disabled: <reason>` status notification on `session_start` for runtimes supporting `ctx.ui.setStatus` (such as Oh My Pi) when RTK binary is missing or below minimum required version.
+- **Safe Lifecycle Compliance (OMP)**: Guarded load-phase execution against calling uninitialized runtime actions, avoiding `ExtensionRuntimeNotInitializedError` in OMP's Bun runtime.
 ## [0.1.5] - 2026-08-21
 
 ### Changed & Improved
