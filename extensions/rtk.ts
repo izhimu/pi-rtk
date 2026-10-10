@@ -162,6 +162,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
 
   pi.on("tool_call", async (event, ctx) => {
     try {
+      if (!rtkEnabled) return;
       if (!isCommandToolCallEvent(event)) return;
 
       const cmd = event.input.command;
@@ -191,7 +192,8 @@ export default async function rtkExtension(pi: ExtensionAPI) {
 
   function getRtkCompletions(prefix: string) {
     const lower = prefix.toLowerCase();
-    return RTK_CHOICES.filter(m => m.value.startsWith(lower)) || null;
+    const items = RTK_CHOICES.filter(m => m.value.startsWith(lower));
+    return items.length > 0 ? items : null;
   }
 
   // ── /rtk command — toggle on/off ───────────────────────────────────────
@@ -239,7 +241,8 @@ export default async function rtkExtension(pi: ExtensionAPI) {
 
   function getStatusCompletions(prefix: string) {
     const lower = prefix.toLowerCase();
-    return STATUS_CHOICES.filter(m => m.value.startsWith(lower)) || null;
+    const items = STATUS_CHOICES.filter(m => m.value.startsWith(lower));
+    return items.length > 0 ? items : null;
   }
 
   // ── /rtk-status command — show savings ───────────────────────────────────

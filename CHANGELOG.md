@@ -2,6 +2,14 @@
 
 All notable changes to `@izhimu/pi-rtk` will be documented in this file.
 
+## [0.1.7] - 2026-10-10
+
+### Fixes & Host Adaptations
+- **Fixed Toggle Ineffective Bug**: Restored `rtkEnabled` check in `tool_call` event handler, ensuring `/rtk off` reliably bypasses command rewriting.
+- **Strict Completion Contract**: Fixed `getRtkCompletions` and `getStatusCompletions` returning `null` instead of empty array on mismatch, conforming to Pi/OMP `AutocompleteItem[] | null` signature.
+- **Dual Host Manifest**: Declared `"omp"` extension root alongside `"pi"` in `package.json` with `"omp-plugin"` keyword, enabling direct first-class discovery across both Pi and Oh My Pi runtimes.
+- **Updated Command Tool Examples**: Documented support for newly added upstream RTK tools including `ast-grep`, `oxlint`, `gradle`, `gh`, and `glab`.
+
 ## [0.1.6] - 2026-09-17
 
 ### Performance & Host Adaptations
