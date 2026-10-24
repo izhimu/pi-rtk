@@ -2,6 +2,11 @@
 
 All notable changes to `@izhimu/pi-rtk` will be documented in this file.
 
+## [0.1.8] - 2026-10-24
+
+### Added
+- **RTK Call Count**: `/rtk` and `/rtk-status` now show the number of actual `rtk rewrite` invocations this session (`calls`), counted after all skip conditions (empty command, `rtk`-prefixed, `RTK_DISABLED=1`). Replaced the previous `total` (rewrites + passthroughs, which silently excluded errors) in the stats line.
+
 ## [0.1.7] - 2026-10-10
 
 ### Fixes & Host Adaptations

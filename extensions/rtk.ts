@@ -39,6 +39,7 @@ function bar(pct: number, width = 20): string {
 // ── Session stats ───────────────────────────────────────────────────────────
 
 interface SessionStats {
+  calls: number;
   rewrites: number;
   passthrough: number;
   errors: number;
@@ -52,7 +53,7 @@ interface RtkGainSummary {
   avg_savings_pct: number;
 }
 
-let sessionStats: SessionStats = { rewrites: 0, passthrough: 0, errors: 0 };
+let sessionStats: SessionStats = { calls: 0, rewrites: 0, passthrough: 0, errors: 0 };
 let rtkEnabled = true;
 let rtkVersion: string | null = null;
 
@@ -156,7 +157,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
 
   // ── Session reset ─────────────────────────────────────────────────────
   pi.on("session_start", async () => {
-    sessionStats = { rewrites: 0, passthrough: 0, errors: 0 };
+    sessionStats = { calls: 0, rewrites: 0, passthrough: 0, errors: 0 };
     rtkEnabled = true;
   });
 
@@ -170,6 +171,7 @@ export default async function rtkExtension(pi: ExtensionAPI) {
       if (cmd.startsWith("rtk ")) return;
       if (process.env.RTK_DISABLED === "1") return;
 
+      sessionStats.calls++;
       const rewritten = await rewriteCommand(pi, cmd, ctx.signal);
       if (rewritten && rewritten !== cmd) {
         event.input.command = rewritten;
@@ -206,11 +208,10 @@ export default async function rtkExtension(pi: ExtensionAPI) {
       if (!arg || arg === "status") {
         const status = rtkEnabled ? `${GREEN}ON${RST}` : `${RED}OFF${RST}`;
         const ver = rtkVersion ? `v${rtkVersion}` : "unknown";
-        const total = sessionStats.rewrites + sessionStats.passthrough;
         const msg = [
           `${BOLD}RTK${RST}: ${status} ${DIM}(${ver})${RST}`,
           "",
-          ` ${sessionStats.rewrites} rewritten ${DIM}│${RST} ${sessionStats.passthrough} passed ${DIM}│${RST} ${total} total`,
+          ` ${sessionStats.calls} rtk calls ${DIM}│${RST} ${sessionStats.rewrites} rewritten ${DIM}│${RST} ${sessionStats.passthrough} passed`,
         ].join("\n");
         if (ctx.hasUI) ctx.ui.notify(msg, "info");
         return;
@@ -251,15 +252,13 @@ export default async function rtkExtension(pi: ExtensionAPI) {
     getArgumentCompletions: (prefix) => getStatusCompletions(prefix),
     handler: async (args, ctx) => {
       const arg = (args || "").trim().toLowerCase();
-      const total = sessionStats.rewrites + sessionStats.passthrough;
-      const rate = total > 0 ? Math.round((sessionStats.rewrites / total) * 100) : 0;
       const status = rtkEnabled ? `${GREEN}ON${RST}` : `${RED}OFF${RST}`;
       const ver = rtkVersion ? `v${rtkVersion}` : "unknown";
 
       const lines: string[] = [
         `${BOLD}RTK${RST}: ${status} ${DIM}(${ver})${RST}`,
         "",
-        ` ${sessionStats.rewrites} rewritten ${DIM}│${RST} ${sessionStats.passthrough} passed ${DIM}│${RST} ${total} total`,
+        ` ${sessionStats.calls} rtk calls ${DIM}│${RST} ${sessionStats.rewrites} rewritten ${DIM}│${RST} ${sessionStats.passthrough} passed`,
       ];
 
       if (sessionStats.errors > 0) {

@@ -14,7 +14,7 @@ Upstream: [rtk-ai/rtk](https://github.com/rtk-ai/rtk)
 - **60-90% token savings** — tested across 100+ command categories
 - **Zero overhead** — single Rust binary, <10ms rewrite latency
 - **Toggle on/off** — `/rtk on` / `/rtk off` without restarting
-- **Session stats** — track rewrites, passthroughs, and errors per session
+- **Session stats** — track rtk invocations, rewrites, passthroughs, and errors per session
 - **Safe by default** — all error paths pass through, RTK never blocks execution
 
 ## Install
@@ -52,10 +52,10 @@ pi -e ./extensions/rtk.ts
 
 | Command | Effect |
 |---------|--------|
-| `/rtk` | Show status (on/off, version, rewrite count) |
+| `/rtk` | Show status (on/off, version, rtk call count) |
 | `/rtk on` | Enable rewriting |
 | `/rtk off` | Disable rewriting |
-| `/rtk-status` | Show project-scoped token savings |
+| `/rtk-status` | Show session stats + project-scoped token savings |
 | `/rtk-status global` | Show global token savings |
 
 ## Supported Categories
