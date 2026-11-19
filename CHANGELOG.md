@@ -2,6 +2,16 @@
 
 All notable changes to `@izhimu/pi-rtk` will be documented in this file.
 
+## [0.2.0] - 2026-11-19
+
+### Changed & Fixed
+- **Upstream RTK rewrite contract**: require `rtk >= 0.25.0`, the release that introduced `rtk rewrite`; 0.23 and 0.24 now disable the extension instead of silently passing through.
+- **Argument separator**: invoke `rtk rewrite -- <command>` so command text such as `--help` cannot be parsed as an RTK option.
+- **OMP tool input revision**: return `{ input }` after a rewrite while retaining Pi's in-place mutation, satisfying both current host contracts.
+
+### Testing
+- Added mock-host regressions for the version boundary, argument separator, Pi mutation, and OMP return payload. Type checking and both tests pass.
+
 ## [0.1.8] - 2026-10-24
 
 ### Added

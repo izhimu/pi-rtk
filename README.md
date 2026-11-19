@@ -89,15 +89,15 @@ rtk cargo test
 
 ## Requirements
 
-- `rtk >= 0.23.0` in PATH
+- `rtk >= 0.25.0` in PATH
 - Install: `brew install rtk` or see [rtk installation](https://github.com/rtk-ai/rtk#installation)
 
 ## How It Works
 
 1. Extension loads, probes `rtk --version` (disables if missing or too old)
 2. Subscribes to `tool_call` events, narrows to `bash` and `powershell` tools
-3. Calls `rtk rewrite <command>` for each shell command
-4. If rewrite differs, mutates command in-place
+3. Calls `rtk rewrite -- <command>` for each shell command
+4. If rewrite differs, mutates command in-place for Pi and returns an input revision for OMP
 5. All error paths pass through — RTK never blocks execution
 
 ## Override

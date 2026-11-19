@@ -2,10 +2,10 @@
 //
 // RTK integration for pi: transparent command rewriting, token savings tracking.
 //
-// Requires: rtk >= 0.23.0 in PATH.
+// Requires: rtk >= 0.25.0 in PATH.
 // Upstream: https://github.com/rtk-ai/rtk
 
-import type { ExtensionAPI, ToolCallEvent } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ToolCallEvent, ToolCallEventResult } from "@earendil-works/pi-coding-agent";
 
 // Local type-guard avoiding package barrel import at load (~250ms -> ~10ms, upstream #2753).
 // Covers both "bash" and "powershell" tool calls (supported since Pi #8512 on Windows).
@@ -20,7 +20,7 @@ function isCommandToolCallEvent(
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const REWRITE_TIMEOUT_MS = 2_000;
-const MIN_SUPPORTED_RTK_MINOR = 23;
+const MIN_SUPPORTED_RTK_MINOR = 25;
 
 // ── Display helpers ─────────────────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ async function rewriteCommand(
   cmd: string,
   signal?: AbortSignal,
 ): Promise<string | null> {
-  const result = await pi.exec("rtk", ["rewrite", cmd], {
+  const result = await pi.exec("rtk", ["rewrite", "--", cmd], {
     timeout: REWRITE_TIMEOUT_MS,
     signal,
   });
@@ -147,9 +147,9 @@ export default async function rtkExtension(pi: ExtensionAPI) {
   if (parsed) {
     const [major, minor] = parsed;
     if (major === 0 && minor < MIN_SUPPORTED_RTK_MINOR) {
-      reportRtkUnavailable(`rtk ${parsed.join(".")} is too old (need >= 0.23.0)`);
+      reportRtkUnavailable(`rtk ${parsed.join(".")} is too old (need >= 0.25.0)`);
       console.warn(
-        `[rtk] rtk ${ver.stdout.trim()} is too old (need >= 0.23.0) — extension disabled`,
+        `[rtk] rtk ${ver.stdout.trim()} is too old (need >= 0.25.0) — extension disabled`,
       );
       return;
     }
@@ -176,6 +176,8 @@ export default async function rtkExtension(pi: ExtensionAPI) {
       if (rewritten && rewritten !== cmd) {
         event.input.command = rewritten;
         sessionStats.rewrites++;
+        // Pi consumes the in-place mutation; OMP consumes the returned input revision.
+        return { input: { ...event.input, command: rewritten } } as unknown as ToolCallEventResult;
       } else {
         sessionStats.passthrough++;
       }

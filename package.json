@@ -1,9 +1,10 @@
 {
   "name": "@izhimu/pi-rtk",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "RTK integration for pi — transparent command rewriting for 60-90% token savings",
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
